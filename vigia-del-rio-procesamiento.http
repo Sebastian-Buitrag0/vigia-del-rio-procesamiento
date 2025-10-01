@@ -1,0 +1,6 @@
+@vigia_del_rio_procesamiento_HostAddress = http://localhost:5097
+
+GET {{vigia_del_rio_procesamiento_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
