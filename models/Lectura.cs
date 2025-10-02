@@ -1,8 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+
 namespace vigia_del_rio_procesamiento.models
 {
-    public class DatosMQTT
+    public class Lectura
     {
-        public Guid Guid { get; set; } = new();
+        [Key]
+        public Guid Id { get; set; } = new();
         public DateTime Fecha { get; set; } = DateTime.Now;
         public string? Topic { get; set; }
         public Guid? SensorId { get; set; }
