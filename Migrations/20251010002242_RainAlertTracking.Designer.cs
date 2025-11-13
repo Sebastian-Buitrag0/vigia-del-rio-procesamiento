@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace vigia_del_rio_procesamiento.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251010002242_RainAlertTracking")]
+    partial class RainAlertTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,9 +29,6 @@ namespace vigia_del_rio_procesamiento.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Evento")
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("timestamp with time zone");
@@ -55,14 +55,13 @@ namespace vigia_del_rio_procesamiento.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("Millimeters")
+                    b.Property<double>("AverageValue")
                         .HasColumnType("double precision");
 
-                    b.Property<Guid>("SensorId")
+                    b.Property<double>("DurationMinutes")
+                        .HasColumnType("double precision");
+
+                    b.Property<Guid?>("SensorId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("SensorNombre")
@@ -83,36 +82,6 @@ namespace vigia_del_rio_procesamiento.Migrations
                         .HasDatabaseName("IX_RainAlert_Sensor_TriggeredAt");
 
                     b.ToTable("AlertasLluvia");
-                });
-
-            modelBuilder.Entity("vigia_del_rio_procesamiento.models.RainGaugeStatus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("LastCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("LastSumMillimeters")
-                        .HasColumnType("double precision");
-
-                    b.Property<DateTime>("LastUpdatedUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("SensorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SensorNombre")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SensorId")
-                        .IsUnique();
-
-                    b.ToTable("EstadosSensores");
                 });
 
             modelBuilder.Entity("vigia_del_rio_procesamiento.models.Sensor", b =>

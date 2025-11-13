@@ -11,6 +11,7 @@ namespace vigia_del_rio_procesamiento.models
         public string? Topic { get; set; }
         public Guid? SensorId { get; set; }
         public Sensor? Sensor { get; set; }
-        public double Valor { get; set; } = -1; //-> No hay lectura
+        public double Valor { get; set; } = -1; //-> mm acumulados por evento
+        public string? Evento { get; set; }
     }
 }

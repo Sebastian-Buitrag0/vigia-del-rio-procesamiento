@@ -2,17 +2,21 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using MQTTnet;
+using vigia_del_rio_procesamiento.Configuration;
 using vigia_del_rio_procesamiento.models;
 
 // Este servicio se ejecutará en segundo plano durante toda la vida de la API
 public class MqttClienteService(
     ILogger<MqttClienteService> logger,
-    IServiceScopeFactory scopeFactory
+    IServiceScopeFactory scopeFactory,
+    IOptions<RainAlertOptions> rainOptions
 ) : BackgroundService
 {
     private readonly ILogger<MqttClienteService> _logger = logger;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly RainAlertOptions _rainOptions = rainOptions.Value;
     private IMqttClient? _mqttClient;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,41 +60,89 @@ public class MqttClienteService(
             using var messageScope = _scopeFactory.CreateScope();
             var dbContext = messageScope.ServiceProvider.GetRequiredService<DataContext>();
 
-            var lecturas = new List<Lectura>(lecturasDto.Count);
+            var eventoObjetivo = _rainOptions.EventName;
+            var lecturas = new List<Lectura>();
+
+            var sensoresSolicitados = lecturasDto
+                .Where(dto =>
+                    dto.Evento != null
+                    && eventoObjetivo != null
+                    && dto.Evento.Equals(eventoObjetivo, StringComparison.OrdinalIgnoreCase)
+                )
+                .Select(dto => dto.IdSensor)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (sensoresSolicitados.Count == 0)
+            {
+                return;
+            }
+
+            var sensoresExistentes = await dbContext
+                .Sensores.Where(s => s.Nombre != null && sensoresSolicitados.Contains(s.Nombre))
+                .ToListAsync(stoppingToken);
+
+            var sensoresPorNombre = new Dictionary<string, Sensor>(
+                StringComparer.OrdinalIgnoreCase
+            );
+            foreach (var sensor in sensoresExistentes)
+            {
+                if (sensor.Nombre != null)
+                {
+                    sensoresPorNombre[sensor.Nombre] = sensor;
+                }
+            }
+
             foreach (var dto in lecturasDto)
             {
-                double valorParsed = -1;
                 if (
-                    !string.IsNullOrEmpty(dto.Valor)
+                    dto.Evento == null
+                    || eventoObjetivo == null
+                    || !dto.Evento.Equals(eventoObjetivo, StringComparison.OrdinalIgnoreCase)
+                )
+                {
+                    continue;
+                }
+
+                if (!sensoresPorNombre.TryGetValue(dto.IdSensor, out var sensor))
+                {
+                    sensor = new Sensor { Nombre = dto.IdSensor };
+                    sensoresPorNombre[dto.IdSensor] = sensor;
+                    dbContext.Sensores.Add(sensor);
+                }
+
+                var milimetros = _rainOptions.MillimetersPerEvent;
+                if (
+                    milimetros <= 0
                     && double.TryParse(
                         dto.Valor,
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
-                        out var v
+                        out var parsedValor
                     )
                 )
                 {
-                    valorParsed = v;
+                    milimetros = parsedValor;
                 }
-
-                var sensor = await dbContext.Sensores.FirstOrDefaultAsync(
-                    s => s.Nombre == dto.IdSensor,
-                    stoppingToken
-                );
 
                 lecturas.Add(
                     new Lectura
                     {
-                        Fecha = dto.DataTime,
+                        Fecha = DateTime.UtcNow,
                         Topic = topic,
-                        SensorId = sensor?.Id,
-                        Valor = valorParsed,
+                        Sensor = sensor,
+                        SensorId = sensor.Id,
+                        Valor = milimetros,
+                        Evento = dto.Evento,
                     }
                 );
             }
 
-            dbContext.DatosMqtt.AddRange(lecturas);
-            await dbContext.SaveChangesAsync(stoppingToken);
+            if (lecturas.Count > 0)
+            {
+                dbContext.DatosMqtt.AddRange(lecturas);
+                await dbContext.SaveChangesAsync(stoppingToken);
+            }
         };
 
         await _mqttClient.ConnectAsync(options, stoppingToken);
