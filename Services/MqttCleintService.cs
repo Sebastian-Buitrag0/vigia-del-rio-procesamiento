@@ -11,12 +11,14 @@ using vigia_del_rio_procesamiento.models;
 public class MqttClienteService(
     ILogger<MqttClienteService> logger,
     IServiceScopeFactory scopeFactory,
-    IOptions<RainAlertOptions> rainOptions
+    IOptions<RainAlertOptions> rainOptions,
+    IOptions<MqttOptions> mqttOptions
 ) : BackgroundService
 {
     private readonly ILogger<MqttClienteService> _logger = logger;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly RainAlertOptions _rainOptions = rainOptions.Value;
+    private readonly MqttOptions _mqttOptions = mqttOptions.Value;
     private IMqttClient? _mqttClient;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -25,8 +27,8 @@ public class MqttClienteService(
         _mqttClient = mqttFactory.CreateMqttClient();
 
         var options = new MqttClientOptionsBuilder()
-            .WithTcpServer("mqtt.vigiadelrio.website", 8883)
-            .WithCredentials("vigia-del-rio", "Sebas_1006")
+            .WithTcpServer(_mqttOptions.Server, _mqttOptions.Port)
+            .WithCredentials(_mqttOptions.Username, _mqttOptions.Password)
             .WithCleanSession()
             .WithTlsOptions(o => o.UseTls())
             .Build();
@@ -149,7 +151,7 @@ public class MqttClienteService(
 
         var subscribeOptions = mqttFactory
             .CreateSubscribeOptionsBuilder()
-            .WithTopicFilter(f => f.WithTopic("test")) // <-- Cambiar a "test"
+            .WithTopicFilter(f => f.WithTopic(_mqttOptions.Topic))
             .Build();
 
         await _mqttClient.SubscribeAsync(subscribeOptions, stoppingToken);

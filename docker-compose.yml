@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - ConnectionStrings__PostgresConnection=Host=db;Port=5432;Database=vigia_db;Username=postgres;Password=12345
+      - Mqtt__Server=mqtt.vigiadelrio.website
+      - Mqtt__Port=8883
+      - Mqtt__Username=vigia-del-rio
+      - Mqtt__Password=Sebas_1006
+      - Mqtt__Topic=test
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: vigia_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:

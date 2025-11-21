@@ -12,6 +12,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 );
 
 builder.Services.Configure<RainAlertOptions>(builder.Configuration.GetSection("RainAlert"));
+builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection("Mqtt"));
 builder.Services.AddHttpClient();
 
 // Registrar servicios en segundo plano
