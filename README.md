@@ -15,7 +15,7 @@ Esta opción levanta tanto la aplicación como una base de datos PostgreSQL conf
 docker-compose up --build -d
 ```
 
-La API estará disponible en `http://localhost:8080`.
+La API estará disponible en `http://localhost:8081`.
 
 ### Opción 2: Ejecución Local (.NET)
 

@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8080:80"
+      - "8081:80"
     environment:
       - ConnectionStrings__PostgresConnection=Host=db;Port=5432;Database=vigia_db;Username=postgres;Password=12345
       - Mqtt__Server=mqtt.vigiadelrio.website
