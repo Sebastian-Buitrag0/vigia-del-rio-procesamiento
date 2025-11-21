@@ -1,4 +1,6 @@
-![Logo del Proyecto](./assets/logo.png)
+<p align="center">
+    <img src="./assets/logo.png" alt="Logo del Proyecto" width="300" />
+</p>
 
 # Sistema de Monitoreo y Alerta Temprana a Inundaciones
 
